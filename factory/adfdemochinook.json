@@ -1,0 +1,9 @@
+{
+	"name": "adfdemochinook",
+	"location": "eastus2",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "2930b584-7e52-44fc-aadc-1b4709083503",
+		"tenantId": "a8eec281-aaa3-4dae-ac9b-9a398b9215e7"
+	}
+}

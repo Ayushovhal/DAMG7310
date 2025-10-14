@@ -1,0 +1,84 @@
+{
+	"name": "Arist_DIM",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SnowChinookDS",
+						"type": "DatasetReference"
+					},
+					"name": "ArtistStage",
+					"description": "Import data from SnowChinookDS"
+				},
+				{
+					"dataset": {
+						"referenceName": "SnowChinookDS",
+						"type": "DatasetReference"
+					},
+					"name": "sourceArtistDIM"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SnowChinookDS",
+						"type": "DatasetReference"
+					},
+					"name": "sinkArtistDIM"
+				}
+			],
+			"transformations": [
+				{
+					"name": "joinSourceTgt",
+					"description": "Left outer join on 'ArtistStage' and 'sourceArtistDIM'"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "Rowchanges"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ARTISTID as decimal(38,0),",
+				"          NAME as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> ArtistStage",
+				"source(output(",
+				"          ARTIST_KEY as decimal(10,0),",
+				"          ARTIST_ID as decimal(10,0),",
+				"          ARTIST_NAME as string,",
+				"          SOURCE_ID as string,",
+				"          DATE_TO_WAREHOUSE as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourceArtistDIM",
+				"ArtistStage, sourceArtistDIM join(ARTISTID == ARTIST_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinSourceTgt",
+				"joinSourceTgt derive(source_hash_value = 0) ~> derivedColumn1",
+				"derivedColumn1 alterRow(updateIf(ARTISTID==ARTIST_ID),",
+				"     insertIf(iifNull(ARTIST_ID,0,ARTIST_ID)==0)) ~> Rowchanges",
+				"Rowchanges sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:true,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:true,",
+				"     keys:['ARTISTID'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     stageInsert: true) ~> sinkArtistDIM"
+			]
+		}
+	}
+}
